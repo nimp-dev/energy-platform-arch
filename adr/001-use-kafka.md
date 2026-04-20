@@ -16,7 +16,7 @@ We use Apache Kafka as the central event streaming platform.
 
 ## Consequences
 
-### Positive
+## Positive
 - High scalability
 - Event replay support
 - Decoupled services

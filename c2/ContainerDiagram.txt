@@ -1,101 +1,173 @@
-title Energy Trading Platform - Event-Driven Architecture
+// ============================================================
+// FINAL ARCHITECTURE (v3.0) — С ЦВЕТОВЫМ КОДИРОВАНИЕМ ПОТОКОВ
+// ============================================================
 
-direction down
-
+// =========================
 // External Systems Layer
+// =========================
 External Systems [icon: globe, color: purple] {
   CRM UI [icon: monitor, label: "CRM / UI"]
   API Gateway [icon: aws-api-gateway]
 }
 
+// =========================
 // Central Platform Layer
+// =========================
 Central Platform [icon: cloud, color: blue] {
-  Kafka [icon: kafka, label: "Apache Kafka (Event Backbone)"] {
+
+  // --- Kafka Backbone ---
+  Kafka [icon: kafka, color: orange, label: "Apache Kafka (Event Backbone)"] {
     Telemetry Raw Topic [icon: mail, label: "telemetry.raw"]
     Telemetry Processed Topic [icon: mail, label: "telemetry.processed"]
     Forecast Updated Topic [icon: mail, label: "forecast.updated"]
     Bid Created Topic [icon: mail, label: "bid.created"]
+
     Command Requested Topic [icon: mail, label: "command.requested"]
     Command Sent Topic [icon: mail, label: "command.sent"]
     Command Executed Topic [icon: mail, label: "command.executed"]
     Command Failed Topic [icon: mail, label: "command.failed"]
   }
 
-  Platform Services [icon: server] {
+  // --- Services ---
+  Platform Services [icon: server, color: green] {
     Telemetry Service [icon: activity]
     Forecast Service [icon: trending-up]
     Trading Engine [icon: dollar-sign]
     Dispatch Service [icon: send]
     Notification Service [icon: bell]
+    Command Tracker [icon: target]
+  }
+
+  // --- Storage ---
+  Data Storage [icon: database, color: orange] {
+    TimescaleDB [icon: postgres, label: "Telemetry & Forecast"]
+    Redis [icon: redis, label: "Command State"]
   }
 }
 
-// Edge Layer - Solar Plants
+// =========================
+// Edge Layer
+// =========================
 Edge Layer [icon: sun, color: green] {
+
   Plant 1 [icon: zap, label: "Solar Plant 1"] {
-    Plant 1 SCADA [icon: cpu, label: "SCADA / Inverters"]
-    Plant 1 Edge Adapter [icon: server, label: "Edge Adapter"]
-    Plant 1 Buffer [icon: database, label: "Local Buffer"]
+    P1 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    P1 Adapter [icon: server, label: "Edge Adapter"]
+    P1 Buffer [icon: database, label: "Local Buffer"]
   }
 
   Plant 2 [icon: zap, label: "Solar Plant 2"] {
-    Plant 2 SCADA [icon: cpu, label: "SCADA / Inverters"]
-    Plant 2 Edge Adapter [icon: server, label: "Edge Adapter"]
-    Plant 2 Buffer [icon: database, label: "Local Buffer"]
+    P2 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    P2 Adapter [icon: server, label: "Edge Adapter"]
+    P2 Buffer [icon: database, label: "Local Buffer"]
   }
 
   Plant 3 [icon: zap, label: "Solar Plant 3"] {
-    Plant 3 SCADA [icon: cpu, label: "SCADA / Inverters"]
-    Plant 3 Edge Adapter [icon: server, label: "Edge Adapter"]
-    Plant 3 Buffer [icon: database, label: "Local Buffer"]
+    P3 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    P3 Adapter [icon: server, label: "Edge Adapter"]
+    P3 Buffer [icon: database, label: "Local Buffer"]
   }
 }
 
-// External to Kafka connections
+
+// =========================
+// External Interaction (EDA)
+// =========================
 CRM UI > API Gateway
-API Gateway > Kafka: publish events [color: blue]
+API Gateway > Command Requested Topic [color: red]
 
-// Event Flow (bottom-up) - Blue
-Plant 1 SCADA > Plant 1 Edge Adapter
-Plant 1 Edge Adapter <> Plant 1 Buffer
-Plant 1 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+// =========================
+// Telemetry Flow (СИНИЙ)
+// =========================
+P1 SCADA > P1 Adapter
+P1 Adapter <> P1 Buffer
+P1 Adapter > Telemetry Raw Topic [color: blue]
 
-Plant 2 SCADA > Plant 2 Edge Adapter
-Plant 2 Edge Adapter <> Plant 2 Buffer
-Plant 2 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+P2 SCADA > P2 Adapter
+P2 Adapter <> P2 Buffer
+P2 Adapter > Telemetry Raw Topic [color: blue]
 
-Plant 3 SCADA > Plant 3 Edge Adapter
-Plant 3 Edge Adapter <> Plant 3 Buffer
-Plant 3 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+P3 SCADA > P3 Adapter
+P3 Adapter <> P3 Buffer
+P3 Adapter > Telemetry Raw Topic [color: blue]
 
-// Service event processing
 Telemetry Raw Topic > Telemetry Service [color: blue]
-Telemetry Service < Telemetry Processed Topic: telemetry.processed [color: blue]
+Telemetry Service > Telemetry Processed Topic [color: blue]
+
 Telemetry Processed Topic > Forecast Service [color: blue]
-Forecast Service < Forecast Updated Topic: forecast.updated [color: blue]
+Forecast Service > Forecast Updated Topic [color: blue]
+
 Forecast Updated Topic > Trading Engine [color: blue]
-Trading Engine < Bid Created Topic: bid.created [color: blue]
+Trading Engine > Bid Created Topic [color: blue]
 
-// Command Flow (top-down) - Red
-Dispatch Service < Command Requested Topic: command.requested [color: red]
-Command Requested Topic > Plant 1 Edge Adapter: command.sent [color: red]
-Command Requested Topic > Plant 2 Edge Adapter: command.sent [color: red]
-Command Requested Topic > Plant 3 Edge Adapter: command.sent [color: red]
+// =========================
+// Storage Flow (СИНИЙ)
+// =========================
+Telemetry Processed Topic > TimescaleDB [color: blue]
+Forecast Updated Topic > TimescaleDB [color: blue]
+TimescaleDB < Trading Engine [color: blue]
 
-Plant 1 Edge Adapter < Command Executed Topic: command.executed [color: red]
-Plant 2 Edge Adapter < Command Executed Topic: command.executed [color: red]
-Plant 3 Edge Adapter < Command Executed Topic: command.executed [color: red]
+// =========================
+// Trading → Dispatch (СИНИЙ)
+// =========================
+Bid Created Topic > Dispatch Service [color: blue]
 
-Plant 1 Edge Adapter < Command Failed Topic: command.failed [color: red]
-Plant 2 Edge Adapter < Command Failed Topic: command.failed [color: red]
-Plant 3 Edge Adapter < Command Failed Topic: command.failed [color: red]
+// =========================
+// Command Flow (КРАСНЫЙ)
+// =========================
+Dispatch Service > Command Requested Topic [color: red]
 
-// Notification connections
+Command Requested Topic > P1 Adapter [color: red]
+Command Requested Topic > P2 Adapter [color: red]
+Command Requested Topic > P3 Adapter [color: red]
+
+// Command lifecycle
+P1 Adapter > Command Sent Topic [color: red]
+P2 Adapter > Command Sent Topic [color: red]
+P3 Adapter > Command Sent Topic [color: red]
+
+P1 Adapter > Command Executed Topic [color: red]
+P2 Adapter > Command Executed Topic [color: red]
+P3 Adapter > Command Executed Topic [color: red]
+
+P1 Adapter > Command Failed Topic [color: red]
+P2 Adapter > Command Failed Topic [color: red]
+P3 Adapter > Command Failed Topic [color: red]
+
+// =========================
+// Command Feedback (Control Loop) — КРАСНЫЙ
+// =========================
+Command Executed Topic > Dispatch Service [color: red]
+Command Failed Topic > Dispatch Service [color: red]
+
+Command Executed Topic > Trading Engine [color: red]
+Command Failed Topic > Trading Engine [color: red]
+
+// =========================
+// Command Tracking (Read Model) — КРАСНЫЙ + ЧЁРНЫЙ для API
+// =========================
+Command Requested Topic > Command Tracker [color: red]
+Command Sent Topic > Command Tracker [color: red]
+Command Executed Topic > Command Tracker [color: red]
+Command Failed Topic > Command Tracker [color: red]
+
+Command Tracker > Redis [color: red]
+API Gateway > Command Tracker [color: purple] // "GET /status/{id}"
+
+// =========================
+// Notifications (СИНИЙ + КРАСНЫЙ)
+// =========================
 Bid Created Topic > Notification Service [color: blue]
 Command Failed Topic > Notification Service [color: red]
+Command Executed Topic > Notification Service [color: red]
 
+// =========================
+// Legend
+// =========================
 legend {
-  [connection: ">", color: blue, label: "Event flow"]
+  [connection: ">", color: blue, label: "Telemetry / Event flow"]
   [connection: ">", color: red, label: "Command flow"]
-  [connection: "<>", label: "Bidirectional sync"]
+  [connection: "<>", label: "Local buffer sync"]
+  [connection: "..>", color: grey, style: dashed, label: "Secure channel (VPN/mTLS)"]
+  [connection: ">", color: purple, label: "Read API"]
 }

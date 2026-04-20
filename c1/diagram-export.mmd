@@ -1,0 +1,24 @@
+---
+config:
+  layout: dagre
+---
+flowchart TB
+ subgraph External["Внешние системы"]
+        Market["Рынок электроэнергии"]
+        Weather["Сервис погоды"]
+  end
+ subgraph Plants["Солнечные электростанции"]
+        Plant1["СЭС №1"]
+        Plant2["СЭС №2"]
+        Plant3["СЭС №3"]
+        Plant4["СЭС №..."]
+  end
+    Trader["Трейдер"] -- UI --> Platform["Платформа торговли"]
+    Platform -- Заявки --> Market
+    Market -- Цены, команды --> Platform
+    Weather -- Прогноз погоды --> Platform
+    Plant1 -- Телеметрия --> Platform
+    Plant2 -- Телеметрия --> Platform
+    Plant3 -- Телеметрия --> Platform
+    Plant4 -- Телеметрия --> Platform
+    Platform -- Команды управления --> Plant1 & Plant2 & Plant3 & Plant4
