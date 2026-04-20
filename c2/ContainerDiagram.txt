@@ -1,0 +1,101 @@
+title Energy Trading Platform - Event-Driven Architecture
+
+direction down
+
+// External Systems Layer
+External Systems [icon: globe, color: purple] {
+  CRM UI [icon: monitor, label: "CRM / UI"]
+  API Gateway [icon: aws-api-gateway]
+}
+
+// Central Platform Layer
+Central Platform [icon: cloud, color: blue] {
+  Kafka [icon: kafka, label: "Apache Kafka (Event Backbone)"] {
+    Telemetry Raw Topic [icon: mail, label: "telemetry.raw"]
+    Telemetry Processed Topic [icon: mail, label: "telemetry.processed"]
+    Forecast Updated Topic [icon: mail, label: "forecast.updated"]
+    Bid Created Topic [icon: mail, label: "bid.created"]
+    Command Requested Topic [icon: mail, label: "command.requested"]
+    Command Sent Topic [icon: mail, label: "command.sent"]
+    Command Executed Topic [icon: mail, label: "command.executed"]
+    Command Failed Topic [icon: mail, label: "command.failed"]
+  }
+
+  Platform Services [icon: server] {
+    Telemetry Service [icon: activity]
+    Forecast Service [icon: trending-up]
+    Trading Engine [icon: dollar-sign]
+    Dispatch Service [icon: send]
+    Notification Service [icon: bell]
+  }
+}
+
+// Edge Layer - Solar Plants
+Edge Layer [icon: sun, color: green] {
+  Plant 1 [icon: zap, label: "Solar Plant 1"] {
+    Plant 1 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    Plant 1 Edge Adapter [icon: server, label: "Edge Adapter"]
+    Plant 1 Buffer [icon: database, label: "Local Buffer"]
+  }
+
+  Plant 2 [icon: zap, label: "Solar Plant 2"] {
+    Plant 2 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    Plant 2 Edge Adapter [icon: server, label: "Edge Adapter"]
+    Plant 2 Buffer [icon: database, label: "Local Buffer"]
+  }
+
+  Plant 3 [icon: zap, label: "Solar Plant 3"] {
+    Plant 3 SCADA [icon: cpu, label: "SCADA / Inverters"]
+    Plant 3 Edge Adapter [icon: server, label: "Edge Adapter"]
+    Plant 3 Buffer [icon: database, label: "Local Buffer"]
+  }
+}
+
+// External to Kafka connections
+CRM UI > API Gateway
+API Gateway > Kafka: publish events [color: blue]
+
+// Event Flow (bottom-up) - Blue
+Plant 1 SCADA > Plant 1 Edge Adapter
+Plant 1 Edge Adapter <> Plant 1 Buffer
+Plant 1 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+
+Plant 2 SCADA > Plant 2 Edge Adapter
+Plant 2 Edge Adapter <> Plant 2 Buffer
+Plant 2 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+
+Plant 3 SCADA > Plant 3 Edge Adapter
+Plant 3 Edge Adapter <> Plant 3 Buffer
+Plant 3 Edge Adapter < Telemetry Raw Topic: telemetry.raw [color: blue]
+
+// Service event processing
+Telemetry Raw Topic > Telemetry Service [color: blue]
+Telemetry Service < Telemetry Processed Topic: telemetry.processed [color: blue]
+Telemetry Processed Topic > Forecast Service [color: blue]
+Forecast Service < Forecast Updated Topic: forecast.updated [color: blue]
+Forecast Updated Topic > Trading Engine [color: blue]
+Trading Engine < Bid Created Topic: bid.created [color: blue]
+
+// Command Flow (top-down) - Red
+Dispatch Service < Command Requested Topic: command.requested [color: red]
+Command Requested Topic > Plant 1 Edge Adapter: command.sent [color: red]
+Command Requested Topic > Plant 2 Edge Adapter: command.sent [color: red]
+Command Requested Topic > Plant 3 Edge Adapter: command.sent [color: red]
+
+Plant 1 Edge Adapter < Command Executed Topic: command.executed [color: red]
+Plant 2 Edge Adapter < Command Executed Topic: command.executed [color: red]
+Plant 3 Edge Adapter < Command Executed Topic: command.executed [color: red]
+
+Plant 1 Edge Adapter < Command Failed Topic: command.failed [color: red]
+Plant 2 Edge Adapter < Command Failed Topic: command.failed [color: red]
+Plant 3 Edge Adapter < Command Failed Topic: command.failed [color: red]
+
+// Notification connections
+Bid Created Topic > Notification Service [color: blue]
+Command Failed Topic > Notification Service [color: red]
+
+legend {
+  [connection: ">", color: blue, label: "Event flow"]
+  [connection: ">", color: red, label: "Command flow"]
+  [connection: "<>", label: "Bidirectional sync"]
+}
